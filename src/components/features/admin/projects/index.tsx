@@ -5,7 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import FormField from "@/src/components/shared/FormField";
 import ImageDropZone from "@/src/components/shared/ImageDropZone";
 import { useProjectStore, type Project } from "@/src/store/useProjectStore";
-import { GetProjects, PostProject, PatchProject, DeleteProject } from "@/src/api/services/projects";
+import { GetProjects, PostProject, PatchProject, DeleteProject, SearchProjects } from "@/src/api/services/projects";
 import { useRole } from "@/src/api/hooks/useRole";
 
 type ProjectForm = Omit<Project, "id" | "tech"> & { techInput: string };
@@ -127,11 +127,28 @@ export default function AdminProjectsView() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = projects.filter(p => {
-    const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === "All" || p.status === filterStatus;
-    return matchSearch && matchStatus;
-  });
+  useEffect(() => {
+    if (!search.trim()) {
+      GetProjects()
+        .then((data) => {
+          const list = Array.isArray(data) ? data : (data.results ?? []);
+          setProjects(list.map(normalize));
+        })
+        .catch(console.error);
+      return;
+    }
+    const timer = setTimeout(() => {
+      SearchProjects(search)
+        .then((data) => {
+          const list = Array.isArray(data) ? data : (data.results ?? []);
+          setProjects(list.map(normalize));
+        })
+        .catch(console.error);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const filtered = projects.filter((p) => filterStatus === "All" || p.status === filterStatus);
 
   const openAdd = () => { setSelected(null); setModal("add"); };
   const openEdit = (p: Project) => { setSelected(p); setModal("edit"); };

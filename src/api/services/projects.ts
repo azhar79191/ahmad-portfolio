@@ -86,3 +86,7 @@ export const DeleteProject = async (id: number) => {
   const res = await api.delete(API_ENDPOINTS.PROJECTS.DELETE_PROJECTS(id));
   return res.data;
 };
+export const SearchProjects = async (searchTerm:string) => {
+  const res = await api.get(API_ENDPOINTS.PROJECTS.SEARCH_PROJECTS(searchTerm));
+  return res.data;
+}

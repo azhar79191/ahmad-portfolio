@@ -31,6 +31,7 @@ export const API_ENDPOINTS = {
     SEND_PROJECTS:"/portfolio/",
     PATCH_PROJECT:(id: number) => `/portfolio/${id}/`,
     DELETE_PROJECTS:(id: number) => `/portfolio/${id}/`,
+    SEARCH_PROJECTS:(searchTerm:string)=>`/portfolio/?search=${searchTerm}`,
   },
   SERVICES: {
     GET_ALL: '/services/',
