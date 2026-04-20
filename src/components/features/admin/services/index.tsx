@@ -87,18 +87,24 @@ function ServiceFormFields({
       </div>
       <div>
         <label className="text-xs text-gray-400 uppercase tracking-wider block mb-1">Gradient</label>
-        <div className="flex gap-2 flex-wrap">
-          {Object.entries(gradientClasses).map(([key, cls]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onChange({ ...form, gradientKey: key })}
-              className={`w-8 h-8 rounded-full bg-gradient-to-br ${cls} transition-transform hover:scale-110 ${
-                form.gradientKey === key ? "ring-2 ring-white ring-offset-2 ring-offset-gray-950 scale-110" : ""
-              }`}
-              title={key.replace("_", " ")}
-            />
-          ))}
+        <div className="relative">
+          <div className="flex items-center gap-2 bg-gray-950 border border-gray-700 rounded-lg px-3 py-2 cursor-pointer" onClick={() => onChange({ ...form, gradientKey: form.gradientKey })}>
+            <div className={`w-5 h-5 rounded-md bg-gradient-to-br flex-shrink-0 ${gradientClasses[form.gradientKey]}`} />
+            <select
+              value={form.gradientKey}
+              onChange={(e) => onChange({ ...form, gradientKey: e.target.value })}
+              className="flex-1 bg-gray-950 text-sm text-gray-100 focus:outline-none cursor-pointer appearance-none [&>option]:bg-gray-950 [&>option]:text-gray-100"
+            >
+              {Object.keys(gradientClasses).map((key) => (
+                <option key={key} value={key}>
+                  {key.replace("_", " → ")}
+                </option>
+              ))}
+            </select>
+            <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
         </div>
       </div>
       <div className="flex gap-3 pt-2">
@@ -151,7 +157,7 @@ export default function AdminServicesView() {
 
   const openEdit = (s: Service) => {
     setSelected(s);
-    setForm({ title: s.title, description: s.description, featuresInput: Array.isArray(s.features) ? s.features.join(", ") : s.features, gradientKey: s.gradient_from in gradientClasses ? s.gradient_from : "violet_purple" });
+    setForm({ title: s.title, description: s.description, featuresInput: Array.isArray(s.features) ? s.features.join(", ") : s.features, gradientKey: s.color_gradient in gradientClasses ? s.color_gradient : "violet_purple" });
     setModal("edit");
   };
 
@@ -164,8 +170,7 @@ export default function AdminServicesView() {
     title: f.title,
     description: f.description,
     features: f.featuresInput.trim(),
-    gradient_from: f.gradientKey,
-    gradient_to: "",
+    color_gradient: f.gradientKey,
   });
 
   const handleAdd = async () => {
@@ -177,7 +182,7 @@ export default function AdminServicesView() {
   const handleEdit = async () => {
     if (!selected) return;
     await PatchService(selected.id, buildPayload(form)).catch(console.error);
-    updateService(selected.id, { title: form.title, description: form.description, features: form.featuresInput.trim(), gradient_from: form.gradientKey, gradient_to: "" });
+    updateService(selected.id, { title: form.title, description: form.description, features: form.featuresInput.trim(), color_gradient: form.gradientKey });
     setModal(null);
   };
 
@@ -244,7 +249,7 @@ export default function AdminServicesView() {
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-10 h-10 rounded-lg flex-shrink-0 bg-gradient-to-br ${gradientClasses[s.gradient_from] ?? "from-violet-600 to-purple-700"}`}
+                        className={`w-10 h-10 rounded-lg flex-shrink-0 bg-gradient-to-br ${gradientClasses[s.color_gradient] ?? "from-violet-600 to-purple-700"}`}
                       />
                       <div>
                         <p className="font-medium text-white">{s.title}</p>
@@ -267,7 +272,7 @@ export default function AdminServicesView() {
                   </td>
                   {/* Gradient preview */}
                   <td className="px-5 py-4">
-                    <div className={`w-16 h-5 rounded-full bg-gradient-to-r ${gradientClasses[s.gradient_from] ?? "from-violet-600 to-purple-700"}`} />
+                    <div className={`w-16 h-5 rounded-full bg-gradient-to-r ${gradientClasses[s.color_gradient] ?? "from-violet-600 to-purple-700"}`} />
                   </td>
                   {/* Visible toggle */}
                   <td className="px-5 py-4">

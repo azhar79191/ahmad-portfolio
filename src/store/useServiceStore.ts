@@ -5,8 +5,7 @@ export type Service = {
   title: string;
   description: string;
   features: string[] | string;
-  gradient_from: string;
-  gradient_to: string;
+  color_gradient: string;
   visible: boolean;
 };
 

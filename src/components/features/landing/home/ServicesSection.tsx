@@ -4,14 +4,14 @@ import React, { useEffect, useState } from "react";
 import Reveal from "./Reveal";
 import { CheckIcon } from "@/src/assets/icons";
 import { GetServices } from "@/src/api/services/services";
+import { gradientClasses } from "@/src/components/features/admin/services";
 
 type ServiceItem = {
   id: number;
   title: string;
   description: string;
   features: string[] | string;
-  gradient_from: string;
-  gradient_to: string;
+  color_gradient: string;
   visible: boolean;
 };
 
@@ -35,19 +35,20 @@ export default function ServicesSection() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {services.map((s, i) => {
             const features = Array.isArray(s.features) ? s.features : s.features.split(",").map((f) => f.trim()).filter(Boolean);
+            const gradCls = gradientClasses[s.color_gradient] ?? "from-violet-600 to-purple-700";
             return (
             <Reveal key={s.id} delay={i * 100}>
               <div className="flip-card h-72 w-full cursor-pointer">
                 <div className="flip-card-inner">
                   <div className="flip-card-front relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 flex flex-col overflow-hidden">
-                    <div className="absolute top-0 left-0 right-0 h-0.5" style={{ background: `linear-gradient(to right, ${s.gradient_from}, ${s.gradient_to})` }} />
+                    <div className={`absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r ${gradCls}`} />
                     <span className="absolute top-4 right-4 text-xs font-bold text-gray-700">0{i + 1}</span>
-                    <div className="w-14 h-14 rounded-xl mb-5 shadow-lg float-anim" style={{ background: `linear-gradient(135deg, ${s.gradient_from}, ${s.gradient_to})`, animationDelay: `${i * 0.4}s` }} />
+                    <div className={`w-14 h-14 rounded-xl mb-5 shadow-lg float-anim bg-gradient-to-br ${gradCls}`} style={{ animationDelay: `${i * 0.4}s` }} />
                     <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">{s.title}</h3>
                     <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{s.description}</p>
                     <p className="mt-auto text-xs font-medium text-violet-400">Hover to see more →</p>
                   </div>
-                  <div className="flip-card-back relative rounded-2xl p-6 flex flex-col justify-between overflow-hidden" style={{ background: `linear-gradient(135deg, ${s.gradient_from}, ${s.gradient_to})` }}>
+                  <div className={`flip-card-back relative rounded-2xl p-6 flex flex-col justify-between overflow-hidden bg-gradient-to-br ${gradCls}`}>
                     <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 20% 20%, white 1px, transparent 1px), radial-gradient(circle at 80% 80%, white 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
                     <div>
                       <span className="text-white/60 text-xs font-bold">0{i + 1}</span>
