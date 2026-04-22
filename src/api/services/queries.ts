@@ -16,10 +16,17 @@ const normalizeQuery = (q: any) => ({
   read: q.status === "read",
 });
 
-export const fetchAllQueries = async () => {
-  const res = await api.get(API_ENDPOINTS.QUERIES.GET_ALL);
+export const fetchAllQueries = async (page: number = 1, pageSize: number = 10, search: string = "", status: string = "") => {
+  const res = await api.get(API_ENDPOINTS.QUERIES.GET_ALL, {
+    params: {
+      page,
+      page_size: pageSize,
+      ...(search.trim() && { search }),
+      ...(status && status !== "All" && { status }),
+    },
+  });
   const raw = Array.isArray(res.data) ? res.data : (res.data.results ?? []);
-  return raw.map(normalizeQuery);
+  return { results: raw.map(normalizeQuery), pagination: res.data.pagination };
 };
 
 export const patchQuery = async (id: number, data: Partial<{ read: boolean }>) => {

@@ -91,14 +91,12 @@ function UserFormFields({ form, onChange, onSubmit, onCancel, submitLabel }: {
 
 function normalize(raw: any): User {
   return {
-    id: raw.id ?? Date.now(),
-    name: raw.name ?? raw.username ?? raw.full_name ?? "",
+    id: raw.id,
+    name: raw.name ?? "",
     email: raw.email ?? "",
-    role: (raw.role ?? raw.user_role ?? "Support Staff") as Role,
-    status: (raw.status ?? (raw.is_active === false ? "Revoked" : "Active")) as Status,
-    added: raw.date_joined ?? raw.created_at
-      ? new Date(raw.date_joined ?? raw.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })
-      : new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" }),
+    role: raw.role as Role,
+    status: raw.is_active ? "Active" : "Revoked",
+    added: new Date(raw.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" }),
   };
 }
 
@@ -110,24 +108,24 @@ export default function RoleManagementView() {
   const [filterStatus, setFilterStatus] = useState("All Status");
 
   useEffect(() => {
-    GetUsers()
-      .then((data) => {
+    const delay = search.trim() ? 400 : 0;
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const data = await GetUsers(search, filterRole, filterStatus);
         const list = Array.isArray(data) ? data : (data.results ?? []);
         setUsers(list.map(normalize));
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [search, filterRole, filterStatus]);
   const [modal, setModal] = useState<"add" | "edit" | "view" | "delete" | null>(null);
   const [selected, setSelected] = useState<User | null>(null);
   const [form, setForm] = useState<UserForm>(EMPTY_FORM);
-
-  const filtered = users.filter(u => {
-    const matchSearch = u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
-    const matchRole = filterRole === "All Roles" || u.role === filterRole;
-    const matchStatus = filterStatus === "All Status" || u.status === filterStatus;
-    return matchSearch && matchRole && matchStatus;
-  });
 
   const openAdd = () => { setForm(EMPTY_FORM); setModal("add"); };
   const openEdit = (u: User) => { setSelected(u); setForm({ name: u.name, email: u.email, role: u.role, status: u.status }); setModal("edit"); };
@@ -203,10 +201,10 @@ export default function RoleManagementView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800/60">
-              {filtered.length === 0 && (
+              {users.length === 0 && (
                 <tr><td colSpan={6} className="text-center py-12 text-gray-600">No users found</td></tr>
               )}
-              {filtered.map(u => (
+              {users.map(u => (
                 <tr key={u.id} className="hover:bg-gray-900/50 transition-colors">
                   <td className="px-5 py-4 font-medium text-white">{u.name}</td>
                   <td className="px-5 py-4 text-gray-400">{u.email}</td>
@@ -242,7 +240,7 @@ export default function RoleManagementView() {
           </table>
         </div>
         <div className="px-5 py-3 border-t border-gray-800 text-xs text-gray-600">
-          Showing {filtered.length} of {users.length} users
+          Showing {users.length} users
         </div>
       </div>
 

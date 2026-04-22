@@ -2,12 +2,6 @@ export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: '/auth/login/',
   },
-  PORTFOLIO: {
-    GET_ALL: '/portfolio/',
-    GET_DETAILS: '/portfolio/',
-    UPDATE:(id:number)=> `/portfolio/${id}/`,
-    DELETE:(id:number)=> `/portfolio/${id}/`,
-  },
   QUERIES: {
     POST: '/contact-queries/',
     GET_ALL: '/contact-queries/',
@@ -50,7 +44,7 @@ export const API_ENDPOINTS = {
   NOTIFICATIONS:{
     GET_NOTIFICATIONS:'/notifications/',
     MARK_AS_READ:(id:number)=> `/notifications/${id}/mark-read/`,
-    MARK_ALL_AS_READ:'/notifications/mark-all-as-read/',
+    MARK_ALL_AS_READ:'/notifications/mark-all-read/',
     UNREAD_COUNT:'/notifications/unread-count/'
   }
 }

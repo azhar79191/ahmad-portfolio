@@ -77,15 +77,20 @@ function TestimonialFormModal({ defaultValues, onSave, onCancel, submitLabel }: 
 }
 
 export default function AdminTestimonialsView() {
-  const { testimonials, search, filterStatus, setSearch, setFilterStatus, addTestimonial, updateTestimonial, deleteTestimonial, toggleStatus, setTestimonials } = useTestimonialStore();
+  const { testimonials, addTestimonial, updateTestimonial, deleteTestimonial, toggleStatus, setTestimonials } = useTestimonialStore();
   const [modal, setModal] = useState<"add" | "edit" | "view" | "delete" | null>(null);
   const [selected, setSelected] = useState<Testimonial | null>(null);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("All");
   const { isSuperAdmin } = useRole();
 
   useEffect(() => {
-    GetTestimonials()
-      .then((data) => {
+    const delay = search.trim() ? 400 : 0;
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const data = await GetTestimonials(1, 100, search, filterStatus);
         const list = Array.isArray(data) ? data : (data.results ?? []);
         setTestimonials(list.map((raw: any) => ({
           id: raw.id,
@@ -96,16 +101,14 @@ export default function AdminTestimonialsView() {
           text: raw.review ?? raw.text ?? "",
           status: raw.status ?? "Published",
         })));
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
-
-  const filtered = testimonials.filter(t => {
-    const matchSearch = t.name.toLowerCase().includes(search.toLowerCase()) || t.company.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === "All" || t.status === filterStatus;
-    return matchSearch && matchStatus;
-  });
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [search, filterStatus]);
 
   const openAdd = () => { setSelected(null); setModal("add"); };
   const openEdit = (t: Testimonial) => { setSelected(t); setModal("edit"); };
@@ -173,10 +176,10 @@ export default function AdminTestimonialsView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60">
-              {filtered.length === 0 && (
+              {testimonials.length === 0 && (
                 <tr><td colSpan={5} className="text-center py-12 text-gray-400 dark:text-gray-600">No testimonials found</td></tr>
               )}
-              {filtered.map(t => (
+              {testimonials.map(t => (
                 <tr key={t.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
                   <td className="px-5 py-4">
                     <p className="font-medium text-gray-900 dark:text-white">{t.name}</p>
@@ -213,7 +216,7 @@ export default function AdminTestimonialsView() {
           </table>
         </div>
         <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-400 dark:text-gray-600">
-          Showing {filtered.length} of {testimonials.length} testimonials
+          Showing {testimonials.length} testimonials
         </div>
       </div>
 

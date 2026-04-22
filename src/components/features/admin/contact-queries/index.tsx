@@ -6,15 +6,12 @@ import { useContactQueryStore, type ContactQuery as Query } from "@/src/store/us
 export default function AdminContactQueriesView() {
   const { queries, loading, error, search, filterRead, setSearch, setFilterRead, markRead, toggleRead, markAllRead, deleteQuery, fetchQueries } = useContactQueryStore();
 
-  useEffect(() => { fetchQueries(); }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => { fetchQueries(search, filterRead); }, search.trim() ? 400 : 0);
+    return () => clearTimeout(timer);
+  }, [search, filterRead]);
   const [selected, setSelected] = useState<Query | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Query | null>(null);
-
-  const filtered = queries.filter(q => {
-    const matchSearch = q.name.toLowerCase().includes(search.toLowerCase()) || q.email.toLowerCase().includes(search.toLowerCase()) || q.message.toLowerCase().includes(search.toLowerCase());
-    const matchRead = filterRead === "All" || (filterRead === "read" && !q.read) || (filterRead === "Read" && q.read);
-    return matchSearch && matchRead;
-  });
 
   const unreadCount = queries.filter(q => !q.read).length;
 
@@ -65,10 +62,10 @@ export default function AdminContactQueriesView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60">
-              {filtered.length === 0 && (
+              {queries.length === 0 && (
                 <tr><td colSpan={6} className="text-center py-12 text-gray-400 dark:text-gray-600">No queries found</td></tr>
               )}
-              {filtered.map(q => (
+              {queries.map(q => (
                 <tr key={q.id} className={`transition-colors hover:bg-gray-50 dark:hover:bg-gray-900/50 ${!q.read ? "bg-violet-50 dark:bg-violet-950/10" : ""}`}>
                   <td className="pl-5 py-4">
                     {!q.read && <span className="w-2 h-2 rounded-full bg-violet-500 block" />}
@@ -106,7 +103,7 @@ export default function AdminContactQueriesView() {
           </table>
         </div>
         <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-400 dark:text-gray-600">
-          Showing {filtered.length} of {queries.length} queries · {unreadCount} unread
+          Showing {queries.length} queries · {unreadCount} unread
         </div>
       </div>
 

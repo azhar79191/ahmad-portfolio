@@ -27,14 +27,19 @@ const filters = ["All", "Unread", "Messages", "Projects", "Testimonials", "Syste
 export default function NotificationsView() {
   const { notifications, activeFilter, setActiveFilter, markRead, markAllRead, unreadCount } = useNotifications();
 
-const filterMap: Record<string, (n: Notification) => boolean> = {
-  All: () => true,
-  Unread: (n) => !n.is_read,
-  Messages: (n) => n.type === "message",
-  Projects: (n) => n.type === "project",
-  Testimonials: (n) => n.type === "testimonial",
-  System: (n) => n.type === "system",
-};
+  // derive unique types from actual response
+  const typeFilters = ["All", "Unread", ...Array.from(new Set(notifications.map((n) => n.type)))];
+
+  const filterMap: Record<string, (n: Notification) => boolean> = {
+    All: () => true,
+    Unread: (n) => !n.is_read,
+    ...Object.fromEntries(
+      Array.from(new Set(notifications.map((n) => n.type))).map((type) => [
+        type,
+        (n: Notification) => n.type === type,
+      ])
+    ),
+  };
   const unread = unreadCount();
 
  const filtered = notifications.filter((n) => {
@@ -58,7 +63,7 @@ const filterMap: Record<string, (n: Notification) => boolean> = {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {filters.map((f) => (
+        {typeFilters.map((f) => (
           <button key={f} onClick={() => setActiveFilter(f)}
             className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-all ${
               activeFilter === f

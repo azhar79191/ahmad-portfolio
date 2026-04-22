@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useServiceStore, type Service } from "@/src/store/useServiceStore";
 import { GetServices, PostService, PatchService, DeleteService } from "@/src/api/services/services";
+import { usePaginatedFetch } from "@/src/api/hooks/usePaginatedFetch";
+import Pagination from "@/src/components/shared/Pagination";
 
 export const gradientClasses: Record<string, string> = {
   violet_purple: "from-violet-600 to-purple-700",
@@ -124,31 +126,16 @@ function ServiceFormFields({
 }
 
 export default function AdminServicesView() {
-  const { services, search, setSearch, setServices, addService, updateService, deleteService, toggleVisible } = useServiceStore();
-  const [loading, setLoading] = useState(true);
+  const { services, setServices, addService, updateService, deleteService, toggleVisible } = useServiceStore();
   const [error, setError] = useState<string | null>(null);
   const [modal, setModal] = useState<"add" | "edit" | "delete" | null>(null);
   const [selected, setSelected] = useState<Service | null>(null);
   const [form, setForm] = useState<ServiceForm>(EMPTY_FORM);
 
-  useEffect(() => {
-    GetServices()
-      .then((data) => {
-        const list = Array.isArray(data) ? data : Array.isArray(data?.results) ? data.results : [];
-        setServices(list);
-      })
-      .catch((err) => {
-        console.error(err);
-        setError(err?.response?.data?.detail ?? err?.message ?? "Failed to load services");
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  const filtered = services.filter(
-    (s) =>
-      s.title.toLowerCase().includes(search.toLowerCase()) ||
-      s.description.toLowerCase().includes(search.toLowerCase())
-  );
+  const { search, onSearch, page, setPage, pageSize, onPageSizeChange, loading, totalCount, totalPages, hasNext, hasPrev } = usePaginatedFetch<Service>({
+    fetchFn: (page, pageSize, search) => GetServices(page, pageSize, search),
+    setItems: setServices,
+  });
 
   const openAdd = () => {
     setForm(EMPTY_FORM);
@@ -204,7 +191,7 @@ export default function AdminServicesView() {
       <div className="flex items-center gap-3">
         <input
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => onSearch(e.target.value)}
           placeholder="Search services..."
           className="bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-violet-500 w-64"
         />
@@ -236,14 +223,14 @@ export default function AdminServicesView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800/60">
-              {filtered.length === 0 && (
+              {services.length === 0 && (
                 <tr>
                   <td colSpan={5} className="text-center py-12 text-gray-600">
                     No services found
                   </td>
                 </tr>
               )}
-              {filtered.map((s) => (
+              {services.map((s) => (
                 <tr key={s.id} className="hover:bg-gray-900/50 transition-colors">
                   {/* Service */}
                   <td className="px-5 py-4">
@@ -306,9 +293,11 @@ export default function AdminServicesView() {
             </tbody>
           </table>
         </div>
-        <div className="px-5 py-3 border-t border-gray-800 text-xs text-gray-600">
-          Showing {filtered.length} of {services.length} services
-        </div>
+        <Pagination
+          page={page} totalPages={totalPages} totalCount={totalCount}
+          pageSize={pageSize} hasNext={hasNext} hasPrev={hasPrev}
+          onPageChange={setPage} onPageSizeChange={onPageSizeChange}
+        />
       </div>
 
       {/* Add Modal */}

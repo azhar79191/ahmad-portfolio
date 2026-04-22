@@ -49,9 +49,15 @@ export default function ProfileDropdown({ logout, user, clearUser }: ProfileDrop
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-600 to-purple-800 flex items-center justify-center text-white text-xs font-bold ring-2 ring-transparent hover:ring-violet-500 transition-all"
+        className="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
       >
-        MA
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-600 to-purple-800 flex items-center justify-center text-white text-xs font-bold ring-2 ring-transparent hover:ring-violet-500 transition-all flex-shrink-0">
+          MA
+        </div>
+        <div className="hidden sm:block text-left">
+          <p className="text-xs font-medium text-gray-900 dark:text-white leading-tight">{user?.email}</p>
+          <p className="text-xs text-violet-500 capitalize leading-tight">{user?.role?.replace("_", " ") ?? "Admin"}</p>
+        </div>
       </button>
 
       {open && (

@@ -1,37 +1,28 @@
 import api from "../axiosInstance";
 import { API_ENDPOINTS } from "../endpoints";
+import type { Project } from "@/src/store/useProjectStore";
 
-export const GetProjects = async () => {
-  const res = await api.get(API_ENDPOINTS.PROJECTS.GET_PROJECTS);
+export const GetProjects = async (page: number = 1, pageSize: number = 10, status?: string) => {
+  const res = await api.get(API_ENDPOINTS.PROJECTS.GET_PROJECTS, {
+    params: {
+      page,
+      page_size: pageSize,
+      ...(status && status !== "All" && { status: status.toLowerCase() }),
+    },
+  });
   return res.data;
 };
 
-const STATUS_MAP: Record<string, string> = {
-  "Live": "live",
-  "In Progress": "in progress",
-  "Archived": "archived",
-};
-
-export const PostProject = async (data: {
-  title: string;
-  category: string;
-  tech: string[];
-  status: string;
-  year: string;
-  github: string;
-  live: string;
-  desc: string;
-  image?: string;
-}) => {
+export const PostProject = async (data: Omit<Project, "id">) => {
   const payload: Record<string, any> = {
     title: data.title,
     category: data.category,
-    tech_stack: data.tech.join(", "),
-    status: STATUS_MAP[data.status] ?? data.status,
+    tech_stack: data.tech_stack,
+    status: data.status,
     year: data.year,
-    github_url: data.github,
-    live_url: data.live,
-    description: data.desc,
+    github_url: data.github_url,
+    live_url: data.live_url,
+    description: data.description,
   };
 
   if (data.image?.startsWith("data:")) {
@@ -47,26 +38,16 @@ export const PostProject = async (data: {
   return (await api.post(API_ENDPOINTS.PROJECTS.SEND_PROJECTS, payload)).data;
 };
 
-export const PatchProject = async (id: number, data: {
-  title: string;
-  category: string;
-  tech: string[];
-  status: string;
-  year: string;
-  github: string;
-  live: string;
-  desc: string;
-  image?: string;
-}) => {
+export const PatchProject = async (id: number, data: Partial<Omit<Project, "id">>) => {
   const payload: Record<string, any> = {
     title: data.title,
     category: data.category,
-    tech_stack: data.tech.join(", "),
-    status: STATUS_MAP[data.status] ?? data.status,
+    tech_stack: data.tech_stack,
+    status: data.status,
     year: data.year,
-    github_url: data.github,
-    live_url: data.live,
-    description: data.desc,
+    github_url: data.github_url,
+    live_url: data.live_url,
+    description: data.description,
   };
 
   if (data.image?.startsWith("data:")) {

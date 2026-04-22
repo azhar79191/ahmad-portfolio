@@ -8,75 +8,74 @@ import { useProjectStore, type Project } from "@/src/store/useProjectStore";
 import { GetProjects, PostProject, PatchProject, DeleteProject, SearchProjects } from "@/src/api/services/projects";
 import { useRole } from "@/src/api/hooks/useRole";
 
-type ProjectForm = Omit<Project, "id" | "tech"> & { techInput: string };
+type ProjectForm = Omit<Project, "id">;
+
+const STATUS_DISPLAY: Record<string, string> = {
+  live: "Live",
+  "in progress": "In Progress",
+  archived: "Archived",
+};
 
 const statusStyle: Record<string, string> = {
-  Live: "bg-emerald-900/40 text-emerald-400 border-emerald-800",
-  "In Progress": "bg-amber-900/40 text-amber-400 border-amber-800",
-  Archived: "bg-gray-800 text-gray-500 border-gray-700",
+  live: "bg-emerald-900/40 text-emerald-400 border-emerald-800",
+  "in progress": "bg-amber-900/40 text-amber-400 border-amber-800",
+  archived: "bg-gray-800 text-gray-500 border-gray-700",
 };
 
 const rules = {
-  title:     { required: "Title is required", minLength: { value: 2, message: "At least 2 characters" } },
-  desc:      { required: "Description is required", minLength: { value: 10, message: "At least 10 characters" } },
-  github:    { required: "GitHub URL is required", pattern: { value: /^https?:\/\/.+/, message: "Enter a valid URL" } },
-  live:      { required: "Live URL is required" },
-  techInput: { required: "At least one technology is required" },
-  year:      { required: "Year is required", pattern: { value: /^\d{4}$/, message: "Enter a valid 4-digit year" } },
-  category:  { required: "Category is required" },
-  status:    { required: "Status is required" },
+  title:       { required: "Title is required" },
+  description: { required: "Description is required" },
+  github_url:  { required: "GitHub URL is required", pattern: { value: /^https?:\/\/.+/, message: "Enter a valid URL" } },
+  live_url:    { required: "Live URL is required" },
+  tech_stack:  { required: "At least one technology is required" },
+  year:        { required: "Year is required", pattern: { value: /^\d{4}$/, message: "Enter a valid 4-digit year" } },
+  category:    { required: "Category is required" },
+  status:      { required: "Status is required" },
 };
 
-function ProjectForm({ defaultValues, onSave, onCancel, submitLabel }: {
+function ProjectFormModal({ defaultValues, onSave, onCancel, submitLabel }: {
   defaultValues: ProjectForm;
   onSave: (data: ProjectForm) => void;
   onCancel: () => void;
   submitLabel: string;
 }) {
-  const { control, handleSubmit, setValue, watch, formState: { errors, isValid, isDirty } } = useForm<ProjectForm>({
-    defaultValues,
-    mode: "onChange",
-  });
-
-  const imageValue = watch("image");
+  const { control, handleSubmit, setValue, formState: { errors, isValid, isDirty } } = useForm<ProjectForm>({ defaultValues, mode: "onChange" });
 
   return (
     <form onSubmit={handleSubmit(onSave)} noValidate className="space-y-3">
       <Controller control={control} name="title" rules={rules.title}
         render={({ field }) => <FormField label="Title" value={field.value} onChange={field.onChange} error={errors.title?.message} />} />
-      <Controller control={control} name="github" rules={rules.github}
-        render={({ field }) => <FormField label="GitHub URL" value={field.value} onChange={field.onChange} error={errors.github?.message} />} />
-      <Controller control={control} name="live" rules={rules.live}
-        render={({ field }) => <FormField label="Live URL" value={field.value} onChange={field.onChange} error={errors.live?.message} />} />
-      <Controller control={control} name="desc" rules={rules.desc}
-        render={({ field }) => <FormField as="textarea" label="Description" rows={2} value={field.value} onChange={field.onChange} error={errors.desc?.message} />} />
+      <Controller control={control} name="github_url" rules={rules.github_url}
+        render={({ field }) => <FormField label="GitHub URL" value={field.value} onChange={field.onChange} error={errors.github_url?.message} />} />
+      <Controller control={control} name="live_url" rules={rules.live_url}
+        render={({ field }) => <FormField label="Live URL" value={field.value} onChange={field.onChange} error={errors.live_url?.message} />} />
+      <Controller control={control} name="description" rules={rules.description}
+        render={({ field }) => <FormField as="textarea" label="Description" rows={2} value={field.value} onChange={field.onChange} error={errors.description?.message} />} />
       <div className="grid grid-cols-2 gap-3">
         <Controller control={control} name="category" rules={rules.category}
           render={({ field }) => <FormField as="select" label="Category" value={field.value} onChange={field.onChange} error={errors.category?.message}
             options={["Full-Stack", "Frontend", "Backend"].map(c => ({ label: c, value: c }))} />} />
         <Controller control={control} name="status" rules={rules.status}
           render={({ field }) => <FormField as="select" label="Status" value={field.value} onChange={field.onChange} error={errors.status?.message}
-            options={["Live", "In Progress", "Archived"].map(s => ({ label: s, value: s }))} />} />
+            options={[
+              { label: "Live", value: "live" },
+              { label: "In Progress", value: "in progress" },
+              { label: "Archived", value: "archived" },
+            ]} />} />
       </div>
-      <Controller control={control} name="techInput" rules={rules.techInput}
-        render={({ field }) => <FormField label="Tech Stack (comma separated)" placeholder="NextJS, Django, PostgreSQL" value={field.value} onChange={field.onChange} error={errors.techInput?.message} />} />
+      <Controller control={control} name="tech_stack" rules={rules.tech_stack}
+        render={({ field }) => <FormField label="Tech Stack (comma separated)" placeholder="NextJS, Django, PostgreSQL" value={field.value} onChange={field.onChange} error={errors.tech_stack?.message} />} />
       <Controller control={control} name="year" rules={rules.year}
         render={({ field }) => <FormField label="Year" placeholder="2024" value={field.value} onChange={field.onChange} error={errors.year?.message} />} />
-
-      {/* Image drop zone */}
-      <Controller
-        control={control}
-        name="image"
+      <Controller control={control} name="image"
         render={({ field }) => (
           <ImageDropZone
-            value={field.value}
+            value={field.value ?? ""}
             onChange={(base64) => setValue("image", base64, { shouldDirty: true, shouldValidate: true })}
             onClear={() => setValue("image", "", { shouldDirty: true, shouldValidate: true })}
-            error={errors.image?.message}
           />
         )}
       />
-
       <div className="flex gap-3 pt-2">
         <button type="submit" disabled={!isValid || !isDirty}
           className="flex-1 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white py-2.5 rounded-lg text-sm font-semibold transition-colors">
@@ -88,82 +87,54 @@ function ProjectForm({ defaultValues, onSave, onCancel, submitLabel }: {
   );
 }
 
-function normalize(raw: any): Omit<Project, "id"> & { id: number } {
-  const STATUS_MAP: Record<string, string> = {
-    "live": "Live",
-    "in progress": "In Progress",
-    "archived": "Archived",
-  };
-  return {
-    id: raw.id ?? Date.now(),
-    title: raw.title ?? raw.name ?? "",
-    category: raw.category ?? "Full-Stack",
-    tech: Array.isArray(raw.tech)
-      ? raw.tech
-      : (raw.tech_stack ?? "").toString().split(",").map((t: string) => t.trim()).filter(Boolean),
-    status: (STATUS_MAP[raw.status] ?? raw.status ?? "Live") as Project["status"],
-    year: raw.year?.toString() ?? new Date().getFullYear().toString(),
-    github: raw.github ?? raw.github_url ?? "",
-    live: raw.live ?? raw.live_url ?? "",
-    desc: raw.desc ?? raw.description ?? "",
-    image: raw.image ?? raw.thumbnail ?? "",
-  };
-}
-
 export default function AdminProjectsView() {
   const { projects, search, filterStatus, setSearch, setFilterStatus, addProject, updateProject, deleteProject, setProjects } = useProjectStore();
   const [modal, setModal] = useState<"add" | "edit" | "view" | "delete" | null>(null);
   const [selected, setSelected] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasNext, setHasNext] = useState(false);
+  const [hasPrev, setHasPrev] = useState(false);
   const { isSuperAdmin } = useRole();
 
   useEffect(() => {
-    GetProjects()
-      .then((data) => {
+    const delay = search.trim() ? 400 : 0;
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const data = search.trim()
+          ? await SearchProjects(search)
+          : await GetProjects(page, pageSize, filterStatus);
         const list = Array.isArray(data) ? data : (data.results ?? []);
-        setProjects(list.map(normalize));
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    if (!search.trim()) {
-      GetProjects()
-        .then((data) => {
-          const list = Array.isArray(data) ? data : (data.results ?? []);
-          setProjects(list.map(normalize));
-        })
-        .catch(console.error);
-      return;
-    }
-    const timer = setTimeout(() => {
-      SearchProjects(search)
-        .then((data) => {
-          const list = Array.isArray(data) ? data : (data.results ?? []);
-          setProjects(list.map(normalize));
-        })
-        .catch(console.error);
-    }, 400);
+        setTotalCount(data.pagination?.total_count ?? list.length);
+        setTotalPages(data.pagination?.total_pages ?? 1);
+        setHasNext(data.pagination?.has_next ?? false);
+        setHasPrev(data.pagination?.has_previous ?? false);
+        setProjects(list);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }, delay);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [page, pageSize, search, filterStatus]);
 
-  const filtered = projects.filter((p) => filterStatus === "All" || p.status === filterStatus);
-
-  const openAdd = () => { setSelected(null); setModal("add"); };
-  const openEdit = (p: Project) => { setSelected(p); setModal("edit"); };
-  const openView = (p: Project) => { setSelected(p); setModal("view"); };
+  const openAdd    = () => { setSelected(null); setModal("add"); };
+  const openEdit   = (p: Project) => { setSelected(p); setModal("edit"); };
+  const openView   = (p: Project) => { setSelected(p); setModal("view"); };
   const openDelete = (p: Project) => { setSelected(p); setModal("delete"); };
 
   const handleSave = async (data: ProjectForm) => {
-    const tech = data.techInput.split(",").map(t => t.trim()).filter(Boolean);
-    const { techInput, ...rest } = data;
     if (modal === "add") {
-      const created = await PostProject({ ...rest, tech }).catch(console.error);
-      addProject(created ? normalize(created) : { ...rest, tech });
+      const created = await PostProject(data).catch(console.error);
+      if (created) addProject(created);
     } else if (modal === "edit" && selected) {
-      await PatchProject(selected.id, { ...rest, tech }).catch(console.error);
-      updateProject(selected.id, { ...rest, tech });
+      await PatchProject(selected.id, data).catch(console.error);
+      updateProject(selected.id, data);
     }
     setModal(null);
   };
@@ -175,28 +146,27 @@ export default function AdminProjectsView() {
     setModal(null);
   };
 
-  const getDefaultValues = (p?: Project | null): ProjectForm => ({
-    title: p?.title ?? "",
-    category: p?.category ?? "Full-Stack",
-    techInput: p?.tech.join(", ") ?? "",
-    status: p?.status ?? "Live",
-    year: p?.year ?? new Date().getFullYear().toString(),
-    github: p?.github ?? "",
-    live: p?.live ?? "",
-    desc: p?.desc ?? "",
-    image: p?.image ?? "",
-  });
+  const emptyForm: ProjectForm = {
+    title: "", category: "Full-Stack", tech_stack: "",
+    status: "live", year: new Date().getFullYear().toString(),
+    github_url: "", live_url: "", description: "", image: "",
+  };
+
+  const techList = (p: Project) =>
+    p.tech_stack.split(",").map((t) => t.trim()).filter(Boolean);
 
   return (
     <div className="space-y-5">
-      {/* Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-3 flex-1">
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search projects..."
+          <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search projects..."
             className="bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-violet-500 w-56" />
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+          <select value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
             className="bg-white dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:border-violet-500">
-            {["All", "Live", "In Progress", "Archived"].map(s => <option key={s}>{s}</option>)}
+            <option value="All">All</option>
+            <option value="live">Live</option>
+            <option value="in progress">In Progress</option>
+            <option value="archived">Archived</option>
           </select>
         </div>
         <button onClick={openAdd} className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
@@ -221,34 +191,34 @@ export default function AdminProjectsView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60">
-              {filtered.length === 0 && (
+              {projects.length === 0 && !loading && (
                 <tr><td colSpan={6} className="text-center py-12 text-gray-400 dark:text-gray-600">No projects found</td></tr>
               )}
-              {filtered.map(p => (
-                <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors group">
+              {projects.map(p => (
+                <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
-                      {p.image && (
-                        <img src={p.image} alt={p.title} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-gray-200 dark:border-gray-700" />
-                      )}
+                      {p.image && <img src={p.image} alt={p.title} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-gray-200 dark:border-gray-700" />}
                       <div>
                         <p className="font-medium text-gray-900 dark:text-white">{p.title}</p>
-                        <p className="text-xs text-gray-500 mt-0.5 truncate max-w-xs">{p.desc}</p>
+                        <p className="text-xs text-gray-500 mt-0.5 truncate max-w-xs">{p.description}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-5 py-4 text-gray-500 dark:text-gray-400">{p.category}</td>
                   <td className="px-5 py-4">
                     <div className="flex flex-wrap gap-1">
-                      {p.tech.slice(0, 2).map(t => (
-                        <span key={t} className="text-xs bg-violet-950/60 text-violet-300 px-2 py-0.5 rounded border border-violet-800/50">{t}</span>
+                      {techList(p).slice(0, 2).map((t, i) => (
+                        <span key={`${t}-${i}`} className="text-xs bg-violet-950/60 text-violet-300 px-2 py-0.5 rounded border border-violet-800/50">{t}</span>
                       ))}
-                      {p.tech.length > 2 && <span className="text-xs text-gray-400 dark:text-gray-500">+{p.tech.length - 2}</span>}
+                      {techList(p).length > 2 && <span className="text-xs text-gray-400">+{techList(p).length - 2}</span>}
                     </div>
                   </td>
                   <td className="px-5 py-4 text-gray-500 dark:text-gray-400">{p.year}</td>
                   <td className="px-5 py-4">
-                    <span className={`text-xs px-2.5 py-1 rounded-full border ${statusStyle[p.status]}`}>{p.status}</span>
+                    <span className={`text-xs px-2.5 py-1 rounded-full border ${statusStyle[p.status] ?? statusStyle["live"]}`}>
+                      {STATUS_DISPLAY[p.status] ?? p.status}
+                    </span>
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center justify-end gap-1">
@@ -259,9 +229,9 @@ export default function AdminProjectsView() {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                       </button>
                       {isSuperAdmin && (
-                      <button onClick={() => openDelete(p)} title="Delete" className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
+                        <button onClick={() => openDelete(p)} title="Delete" className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
                       )}
                     </div>
                   </td>
@@ -270,8 +240,33 @@ export default function AdminProjectsView() {
             </tbody>
           </table>
         </div>
-        <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-400 dark:text-gray-600">
-          Showing {filtered.length} of {projects.length} projects
+
+        {/* Pagination */}
+        <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-600">
+            <span>Per page:</span>
+            <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+              className="bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded px-2 py-1 text-xs text-gray-700 dark:text-gray-300 focus:outline-none">
+              {[5, 10, 20, 50].map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+            <span>{totalCount} total</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setPage(p => p - 1)} disabled={!hasPrev}
+              className="px-3 py-1.5 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 text-xs transition-colors">
+              ← Prev
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <button key={p} onClick={() => setPage(p)}
+                className={`w-8 h-8 rounded text-xs font-medium transition-colors ${page === p ? "bg-violet-600 text-white" : "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"}`}>
+                {p}
+              </button>
+            ))}
+            <button onClick={() => setPage(p => p + 1)} disabled={!hasNext}
+              className="px-3 py-1.5 rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 text-xs transition-colors">
+              Next →
+            </button>
+          </div>
         </div>
       </div>
 
@@ -284,23 +279,25 @@ export default function AdminProjectsView() {
               <div className="p-6">
                 <div className="flex items-start justify-between mb-5">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">{selected.title}</h2>
-                  <button onClick={() => setModal(null)} className="text-gray-400 hover:text-gray-700 dark:hover:text-white"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+                  <button onClick={() => setModal(null)} className="text-gray-400 hover:text-white"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
                 </div>
                 <div className="space-y-3 text-sm">
-                  {selected.image && (
-                    <img src={selected.image} alt={selected.title} className="w-full h-40 object-cover rounded-xl mb-2" />
-                  )}
-                  <div className="flex gap-2"><span className="text-gray-500 w-24">Category:</span><span className="text-gray-700 dark:text-gray-200">{selected.category}</span></div>
-                  <div className="flex gap-2"><span className="text-gray-500 w-24">Year:</span><span className="text-gray-700 dark:text-gray-200">{selected.year}</span></div>
-                  <div className="flex gap-2"><span className="text-gray-500 w-24">Status:</span><span className={`text-xs px-2 py-0.5 rounded-full border ${statusStyle[selected.status]}`}>{selected.status}</span></div>
-                  <div className="flex gap-2"><span className="text-gray-500 w-24">Description:</span><span className="text-gray-700 dark:text-gray-200">{selected.desc}</span></div>
-                  <div className="flex gap-2 flex-wrap"><span className="text-gray-500 w-24">Tech:</span>{selected.tech.map(t => <span key={t} className="text-xs bg-violet-950/60 text-violet-300 px-2 py-0.5 rounded border border-violet-800/50">{t}</span>)}</div>
-                  <div className="flex gap-2"><span className="text-gray-500 w-24">GitHub:</span><a href={selected.github} className="text-violet-500 dark:text-violet-400 hover:underline truncate">{selected.github}</a></div>
-                  <div className="flex gap-2"><span className="text-gray-500 w-24">Live:</span><a href={selected.live} className="text-violet-500 dark:text-violet-400 hover:underline">{selected.live}</a></div>
+                  {selected.image && <img src={selected.image} alt={selected.title} className="w-full h-40 object-cover rounded-xl mb-2" />}
+                  {([
+                    ["Category", selected.category],
+                    ["Year", selected.year],
+                    ["Tech", selected.tech_stack],
+                    ["Description", selected.description],
+                  ] as [string, string][]).map(([label, val]) => (
+                    <div key={label} className="flex gap-2"><span className="text-gray-500 w-24">{label}:</span><span className="text-gray-700 dark:text-gray-200">{val}</span></div>
+                  ))}
+                  <div className="flex gap-2"><span className="text-gray-500 w-24">Status:</span><span className={`text-xs px-2 py-0.5 rounded-full border ${statusStyle[selected.status]}`}>{STATUS_DISPLAY[selected.status] ?? selected.status}</span></div>
+                  <div className="flex gap-2"><span className="text-gray-500 w-24">GitHub:</span><a href={selected.github_url} className="text-violet-400 hover:underline truncate">{selected.github_url}</a></div>
+                  <div className="flex gap-2"><span className="text-gray-500 w-24">Live:</span><a href={selected.live_url} className="text-violet-400 hover:underline">{selected.live_url}</a></div>
                 </div>
                 <div className="flex gap-3 mt-6">
                   <button onClick={() => openEdit(selected)} className="flex-1 bg-violet-600 hover:bg-violet-500 text-white py-2 rounded-lg text-sm font-medium transition-colors">Edit</button>
-                  <button onClick={() => setModal(null)} className="flex-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 py-2 rounded-lg text-sm transition-colors">Close</button>
+                  <button onClick={() => setModal(null)} className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 py-2 rounded-lg text-sm transition-colors">Close</button>
                 </div>
               </div>
             )}
@@ -309,10 +306,10 @@ export default function AdminProjectsView() {
               <div className="p-6">
                 <div className="flex items-center justify-between mb-5">
                   <h2 className="text-lg font-bold text-gray-900 dark:text-white">{modal === "add" ? "Add Project" : "Edit Project"}</h2>
-                  <button onClick={() => setModal(null)} className="text-gray-400 hover:text-gray-700 dark:hover:text-white"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+                  <button onClick={() => setModal(null)} className="text-gray-400 hover:text-white"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
                 </div>
-                <ProjectForm
-                  defaultValues={getDefaultValues(selected)}
+                <ProjectFormModal
+                  defaultValues={selected ? { ...selected } : emptyForm}
                   onSave={handleSave}
                   onCancel={() => setModal(null)}
                   submitLabel={modal === "add" ? "Add Project" : "Save Changes"}
@@ -322,14 +319,14 @@ export default function AdminProjectsView() {
 
             {modal === "delete" && selected && (
               <div className="p-6 text-center">
-                <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-7 h-7 text-red-500 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                <div className="w-14 h-14 bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </div>
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Delete Project?</h2>
-                <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">Are you sure you want to delete <span className="text-gray-900 dark:text-white font-medium">"{selected.title}"</span>? This action cannot be undone.</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">Delete <span className="text-white font-medium">"{selected.title}"</span>? This cannot be undone.</p>
                 <div className="flex gap-3">
                   <button onClick={handleDelete} className="flex-1 bg-red-600 hover:bg-red-500 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors">Delete</button>
-                  <button onClick={() => setModal(null)} className="flex-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 py-2.5 rounded-lg text-sm transition-colors">Cancel</button>
+                  <button onClick={() => setModal(null)} className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 py-2.5 rounded-lg text-sm transition-colors">Cancel</button>
                 </div>
               </div>
             )}

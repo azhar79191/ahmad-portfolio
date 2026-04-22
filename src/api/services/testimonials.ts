@@ -1,8 +1,15 @@
 import api from "../axiosInstance"
 import { API_ENDPOINTS } from "../endpoints"
 
-export const GetTestimonials = async () => {
-  const res = await api.get(API_ENDPOINTS.TESTEMONIAL.GET_TESTIMONIAL);
+export const GetTestimonials = async (page: number = 1, pageSize: number = 10, search: string = "", status: string = "") => {
+  const res = await api.get(API_ENDPOINTS.TESTEMONIAL.GET_TESTIMONIAL, {
+    params: {
+      page,
+      page_size: pageSize,
+      ...(search.trim() && { search }),
+      ...(status && status !== "All" && { status }),
+    },
+  });
   return res.data;
 }
 

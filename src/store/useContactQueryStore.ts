@@ -18,7 +18,7 @@ type ContactQueryStore = {
   filterRead: string;
   setSearch: (v: string) => void;
   setFilterRead: (v: string) => void;
-  fetchQueries: () => Promise<void>;
+  fetchQueries: (search?: string, filterRead?: string) => Promise<void>;
   markRead: (id: number) => Promise<void>;
   toggleRead: (id: number) => Promise<void>;
   markAllRead: () => Promise<void>;
@@ -35,11 +35,11 @@ export const useContactQueryStore = create<ContactQueryStore>((set, get) => ({
   setSearch: (v) => set({ search: v }),
   setFilterRead: (v) => set({ filterRead: v }),
 
-  fetchQueries: async () => {
+  fetchQueries: async (search = "", filterRead = "All") => {
     set({ loading: true, error: null });
     try {
-      const data = await fetchAllQueries();
-      set({ queries: Array.isArray(data) ? data : (data.results ?? []) });
+      const data = await fetchAllQueries(1, 100, search, filterRead === "All" ? "" : filterRead.toLowerCase());
+      set({ queries: data.results ?? [] });
     } catch {
       set({ error: "Failed to load queries." });
     } finally {

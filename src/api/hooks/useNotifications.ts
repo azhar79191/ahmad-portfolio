@@ -8,22 +8,34 @@ export function useNotifications() {
   const { notifications, setNotifications, markRead, markAllRead, ...rest } = useNotificationStore();
 
   useEffect(() => {
-    GetNotifications()
-      .then((data) => {
+    const load = async () => {
+      try {
+        const data = await GetNotifications();
         const list = Array.isArray(data) ? data : Array.isArray(data?.results) ? data.results : [];
         setNotifications(list);
-      })
-      .catch(console.error);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    load();
   }, []);
 
   const handleMarkRead = async (id: number) => {
-    markRead(id);
-    await MarkNotificationRead(id).catch(() => markRead(id));
+    try {
+      await MarkNotificationRead(id);
+      markRead(id);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleMarkAllRead = async () => {
-    markAllRead();
-    await MarkAllNotificationsRead().catch(() => markAllRead());
+    try {
+      await MarkAllNotificationsRead();
+      markAllRead();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return { notifications, markRead: handleMarkRead, markAllRead: handleMarkAllRead, ...rest };

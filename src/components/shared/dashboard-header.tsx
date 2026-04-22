@@ -34,7 +34,9 @@ export default function DashboardHeader() {
       <div className="flex items-center gap-2">
         <ThemeToggle />
         <NotificationsDropdown />
-        <ProfileDropdown logout={logoutUser} user={user} clearUser={clearUser} />
+        <div className="flex items-center gap-2">
+          <ProfileDropdown logout={logoutUser} user={user} clearUser={clearUser} />
+        </div>
       </div>
     </header>
   );
